@@ -85,7 +85,11 @@ impl Editor {
         if y < offset.y + padding {
             offset.y = y.saturating_sub(padding);
         } else if y >= offset.y.saturating_add(height - padding) {
-            offset.y = y.saturating_sub(height - padding);
+            if self.document.len() <= offset.y.saturating_add(height) {
+                offset.y = self.document.len().saturating_sub(height);
+            } else {
+                offset.y = y.saturating_sub(height - padding);
+            }
         }
         if x < offset.x {
             offset.x = x;
@@ -98,7 +102,11 @@ impl Editor {
         let Position { mut y, mut x } = self.cursor_position;
         let size = self.terminal.size();
         let height = self.document.len();
-        let width = size.width.saturating_sub(1) as usize;
+        let width = if let Some(row) = self.document.row(y) {
+            row.len()
+        } else {
+            0
+        };
         match key {
             Key::Char('k') => y = y.saturating_sub(1),
             Key::Char('j') => {
