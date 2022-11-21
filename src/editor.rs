@@ -82,10 +82,10 @@ impl Editor {
         // keep a 1/3 of the screen as padding when scrolling
         // like vim
         if y == 0 {}
-        if y < offset.y {
-            offset.y = y;
-        } else if y >= offset.y.saturating_add(height) {
-            offset.y = y.saturating_sub(height).saturating_add(1);
+        if y < offset.y + padding {
+            offset.y = y.saturating_sub(padding);
+        } else if y >= offset.y.saturating_add(height - padding) {
+            offset.y = y.saturating_sub(height - padding);
         }
         if x < offset.x {
             offset.x = x;
@@ -97,7 +97,7 @@ impl Editor {
     fn move_cursor(&mut self, key: Key) {
         let Position { mut y, mut x } = self.cursor_position;
         let size = self.terminal.size();
-        let height = self.document.len() - 1;
+        let height = self.document.len();
         let width = size.width.saturating_sub(1) as usize;
         match key {
             Key::Char('k') => y = y.saturating_sub(1),
@@ -132,7 +132,10 @@ impl Editor {
             println!("Goodbye.\r");
         } else {
             self.draw_rows();
-            Terminal::cursor_position(&self.cursor_position);
+            Terminal::cursor_position(&Position {
+                x: self.cursor_position.x.saturating_sub(self.offset.x),
+                y: self.cursor_position.y.saturating_sub(self.offset.y),
+            });
         }
         Terminal::cursor_show();
         Terminal::flush()
